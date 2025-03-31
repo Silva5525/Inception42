@@ -1,0 +1,58 @@
+volumes:
+    wordpress:
+        name: wordpress
+    mariadb:
+        name: mariadb
+
+networks:
+    inception:
+        name: inception42
+
+secrets:
+    wp_admin_pw:
+        file: ./secrets/wp_admin_password.txt
+    db_pw:
+        file: ./secrets/db_password.txt
+    db_root_pw:
+        file: ./secrets/db_root_password.txt
+
+services:
+    nginx:
+        container_name: nginx
+        image: nginx:${USER}42
+        build: ./requirements/nginx
+        ports:
+          - "443:443"
+        depends_on:
+          - wordpress
+        networks:
+          - inception
+        env_file:
+          - .env
+        restart: always
+
+    wordpress:
+        container_name: wordpress
+        image: wordpress:${USER}42
+        build: ./requirements/wordpress/.
+        depends_on:
+          - mariadb
+        volumes:
+          - wordpress:/var/www/html
+        env_file:
+          - .env
+        networks:
+          - inception
+        restart: always
+
+    mariadb:
+        container_name: mariadb
+        image: mariadb:${USER}42
+        build: ./requirements/mariadb/.
+        volumes:
+          - mariadb:/var/lib/mysql
+        env_file:
+          - .env
+        networks:
+          - inception
+        restart: always
