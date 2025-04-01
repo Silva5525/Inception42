@@ -1,4 +1,13 @@
 #!/bin/bash
+set -e
+
+# Create the required runtime directory
+mkdir -p /var/run/mysqld
+chown -R mysql:mysql /var/run/mysqld
+
+mkdir -p /var/log/mysql
+chown -R mysql:mysql /var/log/mysql
+
 
 # Set the MySQL root password from the secret
 DB_PASSWORD=$(cat /run/secrets/db_pw)
@@ -22,7 +31,7 @@ mysql -u root -S /var/run/mysqld/mysqld.sock <<-EOSQL
 EOSQL
 
 # Bring down MySQL
-mysqladmin shutdown -u root -p"${DB_ROOT_PASSWORD}" -S /var/run/mysqld/mysqld.sock
+mysqladmin shutdown -u root -p"${DB_ROOT_PASSWORD}" -S /var/run/mysqld/mysqld.sock || true
 
 # Now start MySQL as PID 1 (for the container)
 exec mysqld

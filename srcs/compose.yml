@@ -10,11 +10,11 @@ networks:
 
 secrets:
     wp_admin_pw:
-        file: ./secrets/wp_admin_password.txt
+        file: ../secrets/wp_admin_password.txt
     db_pw:
-        file: ./secrets/db_password.txt
+        file: ../secrets/db_password.txt
     db_root_pw:
-        file: ./secrets/db_root_password.txt
+        file: ../secrets/db_root_password.txt
 
 services:
     nginx:
@@ -25,6 +25,8 @@ services:
           - "443:443"
         depends_on:
           - wordpress
+        volumes:
+          - wordpress:/var/www/html
         networks:
           - inception
         env_file:
@@ -44,6 +46,10 @@ services:
         networks:
           - inception
         restart: always
+        secrets:
+          - db_pw
+          - db_root_pw
+          - wp_admin_pw
 
     mariadb:
         container_name: mariadb
@@ -56,3 +62,6 @@ services:
         networks:
           - inception
         restart: always
+        secrets:
+          - db_pw
+          - db_root_pw

@@ -1,9 +1,11 @@
 FROM debian:bookworm
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # install mariadb & remove the cache
-RUN apt-get update -y && \
+RUN apt-get -y update && \
     apt-get install -y mariadb-server && \
-    apt clean && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # copy the mariadb configuration files
