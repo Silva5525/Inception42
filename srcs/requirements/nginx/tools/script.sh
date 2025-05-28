@@ -4,11 +4,6 @@
 # If no certificate exists, it generates one using OpenSSL
 # It also creates a basic NGINX TLS config for serving PHP files via FastCGI.
 
-# Define paths for SSL certificate and key, defaulting to self-signed cert locations
-SSL_CERT_PATH=${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}
-SSL_KEY_PATH=${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}
-DOMAIN_NAME=${DOMAIN_NAME:-localhost}
-
 # Ensure directories exist, then generate a new self-signed certificate if missing
 mkdir -p $(dirname "$SSL_CERT_PATH") $(dirname "$SSL_KEY_PATH")
 
@@ -45,6 +40,19 @@ server {
     }
 }
 EOF
+
+# Validate certs
+if [ ! -s "$SSL_CERT_PATH" ] || [ ! -s "$SSL_KEY_PATH" ]; then
+  echo "SSL cert/key generation failed. Exiting."
+  exit 1
+fi
+
+# Validate NGINX config
+nginx -t
+if [ $? -ne 0 ]; then
+  echo "NGINX config invalid. Exiting."
+  exit 1
+fi
 
 # Start NGINX in the foreground to keep the container/process alive
 exec nginx -g "daemon off;"

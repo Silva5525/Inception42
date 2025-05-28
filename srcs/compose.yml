@@ -1,61 +1,78 @@
+# Define a custom Docker network for service isolation and internal DNS
 networks:
     inception:
         name: inception
 
+# Manage sensitive credentials securely using Docker secrets
 secrets:
     wp_admin_pw:
-        file: ../secrets/wp_admin_password.txt
+        file: ../secrets/wp_admin_password.txt  # WordPress admin password (used during initial setup)
     db_pw:
-        file: ../secrets/db_password.txt
+        file: ../secrets/db_password.txt        # MariaDB user password for WordPress access
     db_root_pw:
-        file: ../secrets/db_root_password.txt
+        file: ../secrets/db_root_password.txt   # MariaDB root password (used for DB init)
 
 services:
     nginx:
         container_name: nginx
-        image: nginx:wdegraf42
-        build: ./requirements/nginx
+        image: nginx:wdegraf42  # Custom NGINX image with TLS and reverse proxy config
+        build: ./requirements/nginx  # Dockerfile location for building the image
         ports:
-          - "443:443"
+          - "443:443"  # Expose HTTPS to host system
         depends_on:
-          - wordpress
+          - wordpress  # Wait until WordPress is healthy before starting
         volumes:
-          - /home/wdegraf/data/wordpress:/var/www/html
+          - /home/wdegraf/data/wordpress:/var/www/html  # Serve WordPress static files from local volume
         networks:
-          - inception
+          - inception  # Connect to isolated application network
         env_file:
-          - .env
-        restart: always
+          - .env  # Shared environment variables (e.g., domain, cert paths)
+        restart: always  # Restart container automatically if it crashes
+        healthcheck:
+          test: ["CMD", "curl", "-f", "https://localhost", "--insecure"]  # Confirm HTTPS service is up
+          interval: 10s
+          timeout: 3s
+          retries: 3
 
     wordpress:
         container_name: wordpress
-        image: wordpress:wdegraf42
-        build: ./requirements/wordpress/.
+        image: wordpress:wdegraf42  # Custom image with pre-installed themes/plugins
+        build: ./requirements/wordpress/.  # Build context for Dockerfile
         depends_on:
-          - mariadb
+          - mariadb  # Ensure DB is ready before starting WordPress
         volumes:
-          - /home/wdegraf/data/wordpress:/var/www/html
+          - /home/wdegraf/data/wordpress:/var/www/html  # Persistent WordPress site files
         env_file:
-          - .env
+          - .env  # Load DB config and site URL
         networks:
-          - inception
+          - inception  # Join the same private network
         restart: always
         secrets:
-          - db_pw
-          - db_root_pw
-          - wp_admin_pw
+          - db_pw        # Credentials to connect to the database
+          - db_root_pw   # Used for initial DB setup if needed
+          - wp_admin_pw  # Admin password for first-time setup
+        healthcheck:
+          test: ["CMD-SHELL", "curl -f https://nginx --insecure || exit 1"]  # Check if WP can reach NGINX (indirectly tests if WP is running correctly)
+          interval: 10s
+          timeout: 5s
+          retries: 3
 
     mariadb:
         container_name: mariadb
-        image: mariadb:wdegraf42
-        build: ./requirements/mariadb/.
+        image: mariadb:wdegraf42  # Custom MariaDB image with preconfigured settings
+        build: ./requirements/mariadb/.  # Build context for the database image
         volumes:
-          - /home/wdegraf/data/mariadb:/var/lib/mysql
+          - /home/wdegraf/data/mariadb:/var/lib/mysql  # Store DB data persistently
         env_file:
-          - .env
+          - .env  # Define database name, user, charset, etc.
         networks:
-          - inception
+          - inception  # Shared network for DB access
         restart: always
         secrets:
-          - db_pw
-          - db_root_pw
+          - db_pw        # User password for WordPress
+          - db_root_pw   # Admin credentials for DB management
+        healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]  # Basic liveness check for MariaDB
+          interval: 10s
+          timeout: 5s
+          retries: 5

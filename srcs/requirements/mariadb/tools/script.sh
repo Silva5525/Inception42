@@ -86,7 +86,6 @@ else
   echo "MariaDB already initialized. Skipping setup."
 fi
 
-
 # Launch MariaDB in foreground to keep the container running
 echo "Starting MariaDB in foreground..."
 exec mysqld
