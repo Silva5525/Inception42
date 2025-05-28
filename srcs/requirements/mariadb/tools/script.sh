@@ -1,22 +1,28 @@
 #!/bin/bash
+
+# Entrypoint script for MariaDB container.
+# Handles directory setup, secrets loading, and one-time DB initialization.
+
 set -e
 
-# Create the required runtime directory
+# Ensure MySQL runtime and log directories exist and are owned by the mysql user.
 mkdir -p /var/run/mysqld /var/log/mysql
 chown -R mysql:mysql /var/run/mysqld /var/log/mysql
 
 echo "Listing /var/lib/mysql:"
 ls -la /var/lib/mysql
+
+# Uncomment for debugging purposes
 # echo "Current user: $(id)"
 
-# Check MySQL data directory is writable
+# Ensure /var/lib/mysql is writable, or the database won't initialize properly.
 if [ ! -w /var/lib/mysql ]; then
   echo "Cannot write to /var/lib/mysql — check volume permissions!"
   ls -la /var/lib/mysql
   exit 2
 fi
 
-# Read secrets
+# Read database passwords from Docker secrets (fallback to empty string if missing)
 DB_PASSWORD=$(cat /run/secrets/db_pw || echo "")
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_pw || echo "")
 
@@ -38,7 +44,7 @@ if [ ! -f "$INIT_MARKER" ]; then
 
   chown -R mysql:mysql /var/lib/mysql
 
-  # Initialize the database directory
+  # Initialize the MySQL data directory (only done on first run)
   mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
   if [ $? -ne 0 ]; then
@@ -46,6 +52,7 @@ if [ ! -f "$INIT_MARKER" ]; then
       exit 1
   fi
 
+  # Compose SQL statements to create DB, user, and set root password
   echo "Starting temporary mysqld instance for initialization..."
   mysqld --skip-networking --socket=/var/run/mysqld/mysqld.sock &
 
@@ -80,6 +87,6 @@ else
 fi
 
 
-# Start MariaDB in foreground
+# Launch MariaDB in foreground to keep the container running
 echo "Starting MariaDB in foreground..."
 exec mysqld

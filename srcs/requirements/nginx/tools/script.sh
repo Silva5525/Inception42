@@ -1,11 +1,15 @@
 #!/bin/bash
+# This script configures and launches an NGINX server with 
+#   a self-signed SSL certificate.
+# If no certificate exists, it generates one using OpenSSL
+# It also creates a basic NGINX TLS config for serving PHP files via FastCGI.
 
-# Set default values if not provided
+# Define paths for SSL certificate and key, defaulting to self-signed cert locations
 SSL_CERT_PATH=${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}
 SSL_KEY_PATH=${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}
 DOMAIN_NAME=${DOMAIN_NAME:-localhost}
 
-# Generate self-signed certificate if not exists
+# Ensure directories exist, then generate a new self-signed certificate if missing
 mkdir -p $(dirname "$SSL_CERT_PATH") $(dirname "$SSL_KEY_PATH")
 
 if [ ! -f "$SSL_CERT_PATH" ] || [ ! -f "$SSL_KEY_PATH" ]; then
@@ -16,7 +20,10 @@ if [ ! -f "$SSL_CERT_PATH" ] || [ ! -f "$SSL_KEY_PATH" ]; then
       -subj "/C=MO/L=KH/O=1337/OU=student/CN=${DOMAIN_NAME}"
 fi
 
-# Create NGINX TLS config
+# Replace NGINX default site configuration to:
+# - Enable HTTPS with the generated self-signed certificate
+# - Serve content from /var/www/html
+# - Forward PHP requests to a FastCGI backend at 'wordpress:9000'
 cat > /etc/nginx/sites-available/default <<EOF
 server {
     listen 443 ssl;
@@ -39,5 +46,5 @@ server {
 }
 EOF
 
-# Start NGINX in foreground
+# Start NGINX in the foreground to keep the container/process alive
 exec nginx -g "daemon off;"
