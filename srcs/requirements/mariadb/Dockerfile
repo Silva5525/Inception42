@@ -4,7 +4,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # install mariadb & remove the cache
 RUN apt-get -y update && \
-    apt-get install -y mariadb-server && \
+    apt-get install -y mariadb-server netcat-openbsd && \
+    groupmod -g 3000 mysql && \
+    usermod -u 3000 -g 3000 mysql && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

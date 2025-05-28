@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # install nginx & remove the cache
 RUN apt-get -y update && \
-    apt-get install -y php php-fpm php-mysql curl unzip less mariadb-client && \
+    apt-get install -y php php-fpm php-mysql curl unzip less mariadb-client netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

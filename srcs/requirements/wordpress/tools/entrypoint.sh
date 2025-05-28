@@ -16,19 +16,17 @@ WP_ADMIN_PWD=$(cat /run/secrets/wp_admin_pw)
 : "${DB_USER:?Missing DB_USER}"
 
 echo "Waiting for MariaDB to be ready..."
-
 until mysqladmin ping -h mariadb -u"${DB_USER}" -p"${DB_PWD}" --silent; do
-    echo "MariaDB not ready... waiting..."
+    echo "MariaDB not ready... retrying in 2s"
     sleep 2
 done
-
 echo "MariaDB is up!"
 
 # Download WP-CLI if not installed
 if ! command -v wp &> /dev/null; then
-  curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-  chmod +x wp-cli.phar
-  mv wp-cli.phar /usr/local/bin/wp
+    curl -s -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    chmod +x wp-cli.phar
+    mv wp-cli.phar /usr/local/bin/wp
 fi
 
 # Prepare directories
@@ -39,51 +37,45 @@ cd /var/www/html
 if [ ! -f wp-config.php ]; then
   echo "First-time setup: installing WordPress..."
 
-  # Download and configure WordPress
-  wp core download --allow-root
+    wp core download --allow-root
 
-  wp config create \
-    --dbname="${DB_NAME}" \
-    --dbuser="${DB_USER}" \
-    --dbpass="${DB_PWD}" \
-    --dbhost="mariadb" \
-    --dbcharset="utf8" \
-    --dbcollate="" \
-    --allow-root \
-    --extra-php <<PHP
+    wp config create \
+        --dbname="${DB_NAME}" \
+        --dbuser="${DB_USER}" \
+        --dbpass="${DB_PWD}" \
+        --dbhost="mariadb" \
+        --dbcharset="utf8" \
+        --dbcollate="" \
+        --allow-root \
+        --extra-php <<PHP
 define('WP_CACHE', true);
 define('WP_ALLOW_REPAIR', true);
 define('WP_DEBUG', true);
 PHP
 
-  wp config shuffle-salts --allow-root
+    wp config shuffle-salts --allow-root
 
-  wp core install \
-    --url="${DOMAIN_NAME}" \
-    --title="${WP_TITLE}" \
-    --admin_user="${WP_ADMIN_USR}" \
-    --admin_password="${WP_ADMIN_PWD}" \
-    --admin_email="${WP_ADMIN_EMAIL}" \
-    --skip-email \
-    --allow-root
+    wp core install \
+        --url="${DOMAIN_NAME}" \
+        --title="${WP_TITLE}" \
+        --admin_user="${WP_ADMIN_USR}" \
+        --admin_password="${WP_ADMIN_PWD}" \
+        --admin_email="${WP_ADMIN_EMAIL}" \
+        --skip-email \
+        --allow-root
 
-  wp user create "${WP_USR}" "${WP_ADMIN_EMAIL}" \
-    --role=author \
-    --user_pass="${DB_PWD}" \
-    --allow-root
+    wp user create "${WP_USR}" "${WP_ADMIN_EMAIL}" \
+        --role=author \
+        --user_pass="${DB_PWD}" \
+        --allow-root
 
-  wp theme install astra --activate --allow-root
-  # wp plugin install redis-cache --activate --allow-root
-  wp plugin update --all --allow-root
+    wp theme install astra --activate --allow-root
+    wp plugin update --all --allow-root
+
+    echo "WordPress installation complete."
 else
-  echo "✅ WordPress already installed — skipping setup."
+    echo "WordPress already installed — skipping setup."
 fi
-# Optional Redis setup (bonus)
-# if [[ -n "$REDIS_HOST" ]]; then
-#   wp config set WP_REDIS_HOST "$REDIS_HOST" --allow-root
-#   wp config set WP_REDIS_PORT "${REDIS_PORT:-6379}" --raw --allow-root
-#   wp redis enable --allow-root || true
-# fi
 
 # Fix permissions for NGINX to read files
 chown -R www-data:www-data /var/www/html
@@ -93,5 +85,6 @@ chmod -R 755 /var/www/html
 PHP_FPM_CONF="/etc/php/8.2/fpm/pool.d/www.conf"
 sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' "$PHP_FPM_CONF"
 
-# Start PHP-FPM in foreground (PID 1)
+echo "Starting PHP-FPM in foreground..."
 exec php-fpm8.2 -F
+

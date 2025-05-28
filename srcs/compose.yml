@@ -1,12 +1,6 @@
-volumes:
-    wordpress:
-        name: wordpress
-    mariadb:
-        name: mariadb
-
 networks:
     inception:
-        name: inception42
+        name: inception
 
 secrets:
     wp_admin_pw:
@@ -19,14 +13,14 @@ secrets:
 services:
     nginx:
         container_name: nginx
-        image: nginx:${USER}42
+        image: nginx:wdegraf42
         build: ./requirements/nginx
         ports:
           - "443:443"
         depends_on:
           - wordpress
         volumes:
-          - wordpress:/var/www/html
+          - /home/wdegraf/data/wordpress:/var/www/html
         networks:
           - inception
         env_file:
@@ -35,12 +29,12 @@ services:
 
     wordpress:
         container_name: wordpress
-        image: wordpress:${USER}42
+        image: wordpress:wdegraf42
         build: ./requirements/wordpress/.
         depends_on:
           - mariadb
         volumes:
-          - wordpress:/var/www/html
+          - /home/wdegraf/data/wordpress:/var/www/html
         env_file:
           - .env
         networks:
@@ -53,10 +47,10 @@ services:
 
     mariadb:
         container_name: mariadb
-        image: mariadb:${USER}42
+        image: mariadb:wdegraf42
         build: ./requirements/mariadb/.
         volumes:
-          - mariadb:/var/lib/mysql
+          - /home/wdegraf/data/mariadb:/var/lib/mysql
         env_file:
           - .env
         networks:

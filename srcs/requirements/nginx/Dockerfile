@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # install nginx & remove the cache
 RUN apt-get -y update && \
-    apt-get install -y apt-utils nginx openssl curl && \
+    apt-get install -y apt-utils nginx openssl curl netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
