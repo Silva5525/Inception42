@@ -2,7 +2,7 @@ FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# install mariadb & remove the cache
+# Install MariaDB and netcat (for health checks, etc.), then clean up
 RUN apt-get -y update && \
     apt-get install -y mariadb-server netcat-openbsd && \
     groupmod -g 3000 mysql && \
@@ -10,11 +10,10 @@ RUN apt-get -y update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# copy the mariadb configuration files
+# copy the custom MariaDB config& entrypoint script
 COPY ./tools/50-server.cnf /etc/mysql/mariadb.conf.d/
 COPY ./tools/script.sh /
-
-# run the script.sh to start the mariadb service
 RUN chmod +x /script.sh
 
-CMD ["/script.sh"]
+# Use the entrypoint script to control container behavior
+ENTRYPOINT ["/script.sh"]

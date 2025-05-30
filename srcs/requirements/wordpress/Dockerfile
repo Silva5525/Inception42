@@ -2,26 +2,22 @@ FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# install nginx & remove the cache
+# Install required packages: PHP, PHP-FPM, PHP-MySQL, curl, MariaDB client, etc.
 RUN apt-get -y update && \
     apt-get install -y php php-fpm php-mysql curl unzip less mariadb-client netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create necessary dirs
+# Create necessary directories for PHP and WordPress
 RUN mkdir -p /var/www/html /run/php
 
-# copy the configuration files
-# COPY ./tools/script.sh /script.sh
-# COPY ./tools/wp-config.php /var/www/html/wp-config.php
+# Copy the custom entrypoint script into the container
 COPY ./tools/entrypoint.sh /entrypoint.sh
 
-# run the script.sh to start the service
-# RUN chmod +x /script.sh
 RUN chmod +x /entrypoint.sh
 
-# Set working directory
+# Set the working directory where WordPress files will live
 WORKDIR /var/www/html
 
-# CMD ["/script.sh"]
+# Use custom entrypoint to handle WordPress installation and setup
 ENTRYPOINT ["/entrypoint.sh"]
