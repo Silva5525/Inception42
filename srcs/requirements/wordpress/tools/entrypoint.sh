@@ -64,13 +64,16 @@ PHP
     # Generate and insert random salts for security
     wp config shuffle-salts --allow-root
 
+    # Generate a random email to avoid conflicts during multiple resets
+    RANDOM_EMAIL=${WP_ADMIN_EMAIL:-admin$(date +%s)@example.com}
+
     # Run the actual WordPress installation with admin credentials
     wp core install \
         --url="${DOMAIN_NAME}" \
         --title="${WP_TITLE}" \
         --admin_user="${WP_ADMIN_USR}" \
         --admin_password="${WP_ADMIN_PWD}" \
-        --admin_email="${WP_ADMIN_EMAIL}" \
+        --admin_email="${RANDOM_EMAIL}" \
         --skip-email \
         --allow-root
 
