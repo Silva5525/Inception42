@@ -25,8 +25,24 @@ data_bases:
 	sudo chown -R 3000:3000 /home/wdegraf/data/mariadb
 	sudo chown -R www-data:www-data /home/wdegraf/data/wordpress
 
+# Create named volumes for WordPress and MariaDB using bind mounts
+named_volumes:
+	docker volume create \
+		--driver local \
+		--opt type=none \
+		--opt device=/home/wdegraf/data/wordpress \
+		--opt o=bind \
+		wordpress_data
+	docker volume create \
+		--driver local \
+		--opt type=none \
+		--opt device=/home/wdegraf/data/mariadb \
+		--opt o=bind \
+		mariadb_data
+
+
 # Main setup: prepare host, check secrets, create volumes, and start containers
-up: add_host data_bases $(SECRETS)
+up: add_host data_bases named_volumes $(SECRETS)
 	$(COMPOSE) up -d
 
 # Rebuild all containers without removing volumes

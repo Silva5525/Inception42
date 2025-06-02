@@ -102,9 +102,9 @@ chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html
 
 # Change PHP-FPM to use TCP (port 9000) instead of Unix socket for container compatibility
-PHP_FPM_CONF="/etc/php/8.2/fpm/pool.d/www.conf"
-sed -i 's|listen = /run/php/php8.2-fpm.sock|listen = 9000|' "$PHP_FPM_CONF"
+PHP_FPM_CONF="/etc/php/7.4/fpm/pool.d/www.conf"
+sed -i 's|listen = /run/php/php7.4-fpm.sock|listen = 9000|' "$PHP_FPM_CONF"
 
 # Start PHP-FPM in the foreground to keep container running
 echo "Starting PHP-FPM..."
-exec php-fpm8.2 -F
+exec php-fpm7.4 -F

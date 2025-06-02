@@ -3,6 +3,10 @@ networks:
     inception:
         name: inception
 
+volumes:
+    wordpress_data:
+    mariadb_data:
+
 # Manage sensitive credentials securely using Docker secrets
 secrets:
     wp_admin_pw:
@@ -22,7 +26,7 @@ services:
         depends_on:
           - wordpress  # Wait until WordPress is healthy before starting
         volumes:
-          - /home/wdegraf/data/wordpress:/var/www/html  # Serve WordPress static files from local volume
+          - maridb_data:/var/www/html  # Serve WordPress static files from local volume
         networks:
           - inception  # Connect to isolated application network
         env_file:
@@ -41,7 +45,7 @@ services:
         depends_on:
           - mariadb  # Ensure DB is ready before starting WordPress
         volumes:
-          - /home/wdegraf/data/wordpress:/var/www/html  # Persistent WordPress site files
+          - wordpress_data:/var/www/html  # Persistent WordPress site files
         env_file:
           - .env  # Load DB config and site URL
         networks:
